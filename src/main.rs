@@ -5,20 +5,18 @@ use std::collections::HashMap;
 use dbase::{FieldValue, Record};
 use csv::WriterBuilder;
 
-/// Convert a FieldValue to a String representation
 fn field_value_to_string(value: &FieldValue) -> String {
     match value {
-        FieldValue::Character(Some(string)) => string.clone(),
-        FieldValue::Numeric(Some(num)) => num.to_string(),
-        FieldValue::Numeric(None) => String::new(),
-        FieldValue::Character(None) => String::new(),
-        FieldValue::Date(None) => String::new(),
-        FieldValue::Date(Some(date)) => date.to_string(),
-        _ => String::new(), // Handle other types as needed
+        dbase::FieldValue::Character(opt) => opt.clone().unwrap_or_default(),
+        dbase::FieldValue::Numeric(opt) => opt.map_or_else(String::new, |n| n.to_string()),
+        dbase::FieldValue::Date(opt) => opt.map_or_else(String::new, |d| d.to_string()),
+        dbase::FieldValue::Logical(opt) => opt.map_or_else(String::new, |b| b.to_string()),
+        dbase::FieldValue::Memo(m) => m.to_string(),
+        dbase::FieldValue::Float(opt) => opt.map_or_else(String::new, |f| f.to_string()),
+        _ => "ERR".to_string(),
     }
-}
+}    
 
-/// Extract headers from the first record
 fn extract_headers(first_record: Record) -> Vec<String> {
     let mut headers: Vec<String> = Vec::new();
     
@@ -29,12 +27,9 @@ fn extract_headers(first_record: Record) -> Vec<String> {
     headers
 }
 
-/// Convert a single record to a CSV row based on headers
 fn record_to_csv_row(record: &Record, headers: &[String]) -> Vec<String> {
-    // Convert record to a HashMap for easy lookup
     let record_map: HashMap<String, FieldValue> = record.clone().into_iter().collect();
     
-    // Write values in the order of headers
     headers.iter()
         .map(|header| {
             record_map.get(header)
@@ -44,33 +39,25 @@ fn record_to_csv_row(record: &Record, headers: &[String]) -> Vec<String> {
         .collect()
 }
 
-/// Convert DBF file to CSV
 fn convert_dbf_to_csv(input_path: &Path, output_path: &Path) -> Result<(), Box<dyn Error>> {
-    // Read the DBF file
     let records = dbase::read(input_path)?;
     
-    // Validate records exist
     if records.is_empty() {
         return Err("No records found in the DBF file".into());
     }
     
-    // Create a CSV writer
     let file = File::create(output_path)?;
     let mut csv_writer = WriterBuilder::new().from_writer(file);
     
-    // Extract headers from first record
     let headers = extract_headers(records[0].clone());
-    
-    // Write headers
+
     csv_writer.write_record(&headers)?;
     
-    // Write records to CSV
     for record in &records {
         let csv_row = record_to_csv_row(record, &headers);
         csv_writer.write_record(&csv_row)?;
     }
     
-    // Ensure all data is written and flushed
     csv_writer.flush()?;
     
     Ok(())
