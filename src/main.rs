@@ -11,7 +11,7 @@ fn field_value_to_string(value: &FieldValue) -> String {
         dbase::FieldValue::Numeric(opt) => opt.map_or_else(String::new, |n| n.to_string()),
         dbase::FieldValue::Date(opt) => opt.map_or_else(String::new, |d| d.to_unix_days().to_string()),
         dbase::FieldValue::Logical(opt) => opt.map_or_else(String::new, |b: bool| match b {true=>"1".to_string(),false=>"0".to_string()}),
-        dbase::FieldValue::Memo(m) =>  format!("{:?}", m),
+        dbase::FieldValue::Memo(m) =>  m.to_string(),
         dbase::FieldValue::Float(opt) => opt.map_or_else(String::new, |f| f.to_string()),
         dbase::FieldValue::DateTime(opt) => opt.to_unix_timestamp().to_string(),
         _ => "ERR".to_string(),
