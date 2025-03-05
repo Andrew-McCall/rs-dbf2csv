@@ -13,7 +13,7 @@ fn field_value_to_string(value: &FieldValue) -> String {
         dbase::FieldValue::Logical(opt) => opt.map_or_else(String::new, |b: bool| match b {true=>"1".to_string(),false=>"0".to_string()}),
         dbase::FieldValue::Memo(m) => m.to_string(),
         dbase::FieldValue::Float(opt) => opt.map_or_else(String::new, |f| f.to_string()),
-        dbase::FieldValue::DateTime(opt) => opt.map_or_else(String::new, |d| d.to_string()),
+        dbase::FieldValue::DateTime(opt) => format!("{:?}", opt),
         _ => "ERR".to_string(),
     }
 }    
@@ -41,7 +41,32 @@ fn record_to_csv_row(record: &Record, headers: &[String]) -> Vec<String> {
 }
 
 fn convert_dbf_to_csv(input_path: &Path, output_path: &Path) -> Result<(), Box<dyn Error>> {
-    let records = dbase::read(input_path)?;
+    let mut memo_path = input_path.to_path_buf();
+    memo_path.set_extension("CDX"); 
+
+    let dbf_file = File::open(input_path).unwrap();
+
+    let options = dbase::ReadingOptions::default()
+    .character_trim(dbase::TrimOption::BeginEnd);
+    
+    let mut reader;
+
+    if memo_path.exists() {
+        reader = dbase::ReaderBuilder::new(dbf_file)
+        .with_options(options)
+        .with_encoding(dbase::encoding::UnicodeLossy)
+        .with_memo( File::open(memo_path).unwrap())
+        .build()
+        .unwrap();
+    }else{
+        reader = dbase::ReaderBuilder::new(dbf_file)
+        .with_options(options)
+        .with_encoding(dbase::encoding::UnicodeLossy)
+        .build()
+        .unwrap();
+    }
+
+    let records = reader.read()?;
     
     if records.is_empty() {
         return Err("No records found in the DBF file".into());
