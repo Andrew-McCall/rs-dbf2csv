@@ -11,7 +11,7 @@ fn field_value_to_string(value: &FieldValue) -> String {
         dbase::FieldValue::Numeric(opt) => opt.map_or_else(String::new, |n| n.to_string()),
         dbase::FieldValue::Date(opt) => opt.map_or_else(String::new, |d| d.to_string()),
         dbase::FieldValue::Logical(opt) => opt.map_or_else(String::new, |b: bool| match b {true=>"1".to_string(),false=>"0".to_string()}),
-        dbase::FieldValue::Memo(m) => m.to_string(),
+        dbase::FieldValue::Memo(m) =>  format!("{:?}", m),
         dbase::FieldValue::Float(opt) => opt.map_or_else(String::new, |f| f.to_string()),
         dbase::FieldValue::DateTime(opt) => format!("{:?}", opt),
         _ => "ERR".to_string(),
@@ -42,7 +42,7 @@ fn record_to_csv_row(record: &Record, headers: &[String]) -> Vec<String> {
 
 fn convert_dbf_to_csv(input_path: &Path, output_path: &Path) -> Result<(), Box<dyn Error>> {
     let mut memo_path = input_path.to_path_buf();
-    memo_path.set_extension("CDX"); 
+    memo_path.set_extension("FPT"); 
 
     let dbf_file = File::open(input_path).unwrap();
 
