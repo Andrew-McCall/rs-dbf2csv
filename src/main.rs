@@ -10,7 +10,7 @@ fn field_value_to_string(value: &FieldValue) -> String {
         dbase::FieldValue::Character(opt) => opt.clone().unwrap_or_default(),
         dbase::FieldValue::Numeric(opt) => opt.map_or_else(String::new, |n| n.to_string()),
         dbase::FieldValue::Date(opt) => opt.map_or_else(String::new, |d| d.to_string()),
-        dbase::FieldValue::Logical(opt) => opt.map_or_else(String::new, |b| b.to_string()),
+        dbase::FieldValue::Logical(opt) => opt.map_or_else(String::new, |b: bool| match b {true=>"1".to_string(),false=>"0".to_string()}),
         dbase::FieldValue::Memo(m) => m.to_string(),
         dbase::FieldValue::Float(opt) => opt.map_or_else(String::new, |f| f.to_string()),
         _ => "ERR".to_string(),
@@ -73,7 +73,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             
             let filename = path.file_name()
                 .and_then(|n| n.to_str())
-                .map(|n| format!("{}.csv", n))
+                .map(|n| format!("{}.csv", &n[..n.len()-4]))
                 .unwrap_or_else(|| "output.csv".to_string());
             
             // Convert file
